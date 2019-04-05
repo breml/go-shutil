@@ -133,21 +133,29 @@ func TestCopyTree(t *testing.T) {
 		return
 	}
 
-	// // And again without clearing the files
-	// _, err = Copy("testdata/testfile2", "testdata/testfile3", false)
-	// if err != nil {
-	//   t.Error(err)
-	//   return
-	// }
+	// And again without clearing the files
+	err = CopyTree("testdata/testdir", "testdata/testdir3", nil)
+	_, ok := err.(*AlreadyExistsError)
+	if err == nil || !ok {
+		t.Errorf("Expected an AlreadyExistsError but got: %s", err)
+		return
+	}
 
-	// match2, err := filesMatch("testdata/testfile2", "testdata/testfile3")
-	// if err != nil {
-	//   t.Error(err)
-	//   return
-	// }
+	// And again without clearing the files (but AllowExistingDestination set)
+	err = CopyTree("testdata/testdir", "testdata/testdir3", &CopyTreeOptions{AllowExistingDestination: true})
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
-	// if !match2 {
-	//   t.Fail()
-	//   return
-	// }
+	match2, err := filesMatch("testdata/testdir/file1", "testdata/testdir/file1")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if !match2 {
+		t.Fail()
+		return
+	}
 }

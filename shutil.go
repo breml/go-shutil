@@ -197,15 +197,17 @@ func Copy(src, dst string, followSymlinks bool) (string, error) {
 }
 
 type CopyTreeOptions struct {
-	Symlinks               bool
-	IgnoreDanglingSymlinks bool
-	CopyFunction           func(string, string, bool) (string, error)
-	Ignore                 func(string, []os.FileInfo) []string
+	Symlinks                 bool
+	IgnoreDanglingSymlinks   bool
+	AllowExistingDestination bool
+	CopyFunction             func(string, string, bool) (string, error)
+	Ignore                   func(string, []os.FileInfo) []string
 }
 
 // Recursively copy a directory tree.
 //
-// The destination directory must not already exist.
+// The destination directory must not already exist (can be overruled with
+// CopyTreeOptions.AllowExistingDestination).
 //
 // If the optional Symlinks flag is true, symbolic links in the
 // source tree result in symbolic links in the destination tree; if
@@ -236,10 +238,10 @@ type CopyTreeOptions struct {
 // exists) can be used.
 func CopyTree(src, dst string, options *CopyTreeOptions) error {
 	if options == nil {
-		options = &CopyTreeOptions{Symlinks: false,
-			Ignore:                 nil,
-			CopyFunction:           Copy,
-			IgnoreDanglingSymlinks: false}
+		options = &CopyTreeOptions{CopyFunction: Copy}
+	}
+	if options.CopyFunction == nil {
+		options.CopyFunction = Copy
 	}
 
 	srcFileInfo, err := os.Stat(src)
@@ -251,9 +253,19 @@ func CopyTree(src, dst string, options *CopyTreeOptions) error {
 		return &NotADirectoryError{src}
 	}
 
-	_, err = os.Open(dst)
+	dfile, err := os.Open(dst)
 	if !os.IsNotExist(err) {
-		return &AlreadyExistsError{dst}
+		if !options.AllowExistingDestination {
+			return &AlreadyExistsError{dst}
+		}
+
+		fstat, err := dfile.Stat()
+		if err != nil {
+			return err
+		}
+		if !fstat.IsDir() {
+			return &AlreadyExistsError{dst}
+		}
 	}
 
 	entries, err := ioutil.ReadDir(src)
