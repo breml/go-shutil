@@ -25,7 +25,7 @@ func filesMatch(src, dst string) (bool, error) {
 }
 
 func TestSameFileError(t *testing.T) {
-	_, err := Copy("test/testfile", "test/testfile", false)
+	_, err := Copy("testdata/testfile", "testdata/testfile", false)
 	_, ok := err.(*SameFileError)
 	if !ok {
 		t.Error(err)
@@ -34,15 +34,15 @@ func TestSameFileError(t *testing.T) {
 
 func TestCopyFile(t *testing.T) {
 	// clear out existing files if they exist
-	os.Remove("test/testfile3")
+	os.Remove("testdata/testfile3")
 
-	err := CopyFile("test/testfile", "test/testfile3", false)
+	err := CopyFile("testdata/testfile", "testdata/testfile3", false)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	match, err := filesMatch("test/testfile", "test/testfile3")
+	match, err := filesMatch("testdata/testfile", "testdata/testfile3")
 	if err != nil {
 		t.Error(err)
 		return
@@ -53,13 +53,13 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	// And again without clearing the files
-	err = CopyFile("test/testfile2", "test/testfile3", false)
+	err = CopyFile("testdata/testfile2", "testdata/testfile3", false)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	match2, err := filesMatch("test/testfile2", "test/testfile3")
+	match2, err := filesMatch("testdata/testfile2", "testdata/testfile3")
 	if err != nil {
 		t.Error(err)
 		return
@@ -73,15 +73,15 @@ func TestCopyFile(t *testing.T) {
 
 func TestCopy(t *testing.T) {
 	// clear out existing files if they exist
-	os.Remove("test/testfile3")
+	os.Remove("testdata/testfile3")
 
-	_, err := Copy("test/testfile", "test/testfile3", false)
+	_, err := Copy("testdata/testfile", "testdata/testfile3", false)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	match, err := filesMatch("test/testfile", "test/testfile3")
+	match, err := filesMatch("testdata/testfile", "testdata/testfile3")
 	if err != nil {
 		t.Error(err)
 		return
@@ -92,13 +92,13 @@ func TestCopy(t *testing.T) {
 	}
 
 	// And again without clearing the files
-	_, err = Copy("test/testfile2", "test/testfile3", false)
+	_, err = Copy("testdata/testfile2", "testdata/testfile3", false)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	match2, err := filesMatch("test/testfile2", "test/testfile3")
+	match2, err := filesMatch("testdata/testfile2", "testdata/testfile3")
 	if err != nil {
 		t.Error(err)
 		return
@@ -112,15 +112,15 @@ func TestCopy(t *testing.T) {
 
 func TestCopyTree(t *testing.T) {
 	// clear out existing files if they exist
-	os.RemoveAll("test/testdir3")
+	os.RemoveAll("testdata/testdir3")
 
-	err := CopyTree("test/testdir", "test/testdir3", nil)
+	err := CopyTree("testdata/testdir", "testdata/testdir3", nil)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	match, err := filesMatch("test/testdir/file1", "test/testdir3/file1")
+	match, err := filesMatch("testdata/testdir/file1", "testdata/testdir3/file1")
 	if err != nil {
 		t.Error(err)
 		return
@@ -131,13 +131,13 @@ func TestCopyTree(t *testing.T) {
 	}
 
 	// // And again without clearing the files
-	// _, err = Copy("test/testfile2", "test/testfile3", false)
+	// _, err = Copy("testdata/testfile2", "testdata/testfile3", false)
 	// if err != nil {
 	//   t.Error(err)
 	//   return
 	// }
 
-	// match2, err := filesMatch("test/testfile2", "test/testfile3")
+	// match2, err := filesMatch("testdata/testfile2", "testdata/testfile3")
 	// if err != nil {
 	//   t.Error(err)
 	//   return
