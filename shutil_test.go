@@ -8,17 +8,17 @@ import (
 )
 
 func filesMatch(src, dst string) (bool, error) {
-	srcContents, err := ioutil.ReadFile(src)
+	srcContents, err := ioutil.ReadFile(src) // nolint: gosec
 	if err != nil {
 		return false, err
 	}
 
-	dstContents, err := ioutil.ReadFile(dst)
+	dstContents, err := ioutil.ReadFile(dst) // nolint: gosec
 	if err != nil {
 		return false, err
 	}
 
-	if bytes.Compare(srcContents, dstContents) != 0 {
+	if !bytes.Equal(srcContents, dstContents) {
 		return false, nil
 	}
 	return true, nil
@@ -34,8 +34,8 @@ func TestSameFileError(t *testing.T) {
 
 func TestCopyFile(t *testing.T) {
 	// clear out existing files if they exist
-	os.Remove("testdata/testfile3")
-	defer os.Remove("testdata/testfile3")
+	os.Remove("testdata/testfile3")       // nolint: gosec,errcheck
+	defer os.Remove("testdata/testfile3") // nolint: errcheck
 
 	err := CopyFile("testdata/testfile", "testdata/testfile3", false)
 	if err != nil {
@@ -74,8 +74,8 @@ func TestCopyFile(t *testing.T) {
 
 func TestCopy(t *testing.T) {
 	// clear out existing files if they exist
-	os.Remove("testdata/testfile3")
-	defer os.Remove("testdata/testfile3")
+	os.Remove("testdata/testfile3")       // nolint: gosec,errcheck
+	defer os.Remove("testdata/testfile3") // nolint: errcheck
 
 	_, err := Copy("testdata/testfile", "testdata/testfile3", false)
 	if err != nil {
@@ -114,8 +114,8 @@ func TestCopy(t *testing.T) {
 
 func TestCopyTree(t *testing.T) {
 	// clear out existing files if they exist
-	os.RemoveAll("testdata/testdir3")
-	defer os.RemoveAll("testdata/testdir3")
+	os.RemoveAll("testdata/testdir3")       // nolint: gosec,errcheck
+	defer os.RemoveAll("testdata/testdir3") // nolint: errcheck
 
 	err := CopyTree("testdata/testdir", "testdata/testdir3", nil)
 	if err != nil {

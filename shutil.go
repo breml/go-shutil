@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// SameFileError is returned, if src and dst file are the same
 type SameFileError struct {
 	Src string
 	Dst string
@@ -17,6 +18,7 @@ func (e SameFileError) Error() string {
 	return fmt.Sprintf("%s and %s are the same file", e.Src, e.Dst)
 }
 
+// SpecialFileError is returned, if a special file like a device is copied
 type SpecialFileError struct {
 	File     string
 	FileInfo os.FileInfo
@@ -26,6 +28,8 @@ func (e SpecialFileError) Error() string {
 	return fmt.Sprintf("`%s` is a named pipe", e.File)
 }
 
+// NotADirectoryError is returned if the file is not a directory but one
+// is expected.
 type NotADirectoryError struct {
 	Src string
 }
@@ -34,6 +38,8 @@ func (e NotADirectoryError) Error() string {
 	return fmt.Sprintf("`%s` is not a directory", e.Src)
 }
 
+// AlreadyExistsError is returned, if the dst directory already exists
+// for tree copy
 type AlreadyExistsError struct {
 	Dst string
 }
@@ -61,16 +67,17 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
+// IsSymlink returns true if a file is a symlink
 func IsSymlink(fi os.FileInfo) bool {
 	return (fi.Mode() & os.ModeSymlink) == os.ModeSymlink
 }
 
-// Copy data from src to dst
+// CopyFile copies data from src to dst
 //
 // If followSymlinks is not set and src is a symbolic link, a
 // new symlink will be created instead of copying the file it points
 // to.
-func CopyFile(src, dst string, followSymlinks bool) error {
+func CopyFile(src, dst string, followSymlinks bool) error { // nolint: gocyclo
 	if samefile(src, dst) {
 		return &SameFileError{src, dst}
 	}
@@ -111,17 +118,17 @@ func CopyFile(src, dst string, followSymlinks bool) error {
 	}
 
 	// Do the actual copy
-	fsrc, err := os.Open(src)
+	fsrc, err := os.Open(src) // nolint: gosec
 	if err != nil {
 		return err
 	}
-	defer fsrc.Close()
+	defer fsrc.Close() // nolint: errcheck
 
 	fdst, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer fdst.Close()
+	defer fdst.Close() // nolint: errcheck
 
 	size, err := io.Copy(fdst, fsrc)
 	if err != nil {
@@ -135,7 +142,7 @@ func CopyFile(src, dst string, followSymlinks bool) error {
 	return nil
 }
 
-// Copy mode bits from src to dst.
+// CopyMode copies mode bits from src to dst.
 //
 // If followSymlinks is false, symlinks aren't followed if and only
 // if both `src` and `dst` are symlinks. If `lchmod` isn't available
@@ -196,6 +203,7 @@ func Copy(src, dst string, followSymlinks bool) (string, error) {
 	return dst, nil
 }
 
+// CopyTreeOptions is used to pass options to CopyTree function
 type CopyTreeOptions struct {
 	Symlinks                 bool
 	IgnoreDanglingSymlinks   bool
@@ -204,7 +212,7 @@ type CopyTreeOptions struct {
 	Ignore                   func(string, []os.FileInfo) []string
 }
 
-// Recursively copy a directory tree.
+// CopyTree recursively copy a directory tree.
 //
 // The destination directory must not already exist (can be overruled with
 // CopyTreeOptions.AllowExistingDestination).
@@ -236,7 +244,7 @@ type CopyTreeOptions struct {
 // destination path as arguments. By default, Copy() is used, but any
 // function that supports the same signature (like Copy2() when it
 // exists) can be used.
-func CopyTree(src, dst string, options *CopyTreeOptions) error {
+func CopyTree(src, dst string, options *CopyTreeOptions) error { // nolint: gocyclo
 	if options == nil {
 		options = &CopyTreeOptions{CopyFunction: Copy}
 	}
@@ -253,13 +261,13 @@ func CopyTree(src, dst string, options *CopyTreeOptions) error {
 		return &NotADirectoryError{src}
 	}
 
-	dfile, err := os.Open(dst)
+	dfile, err := os.Open(dst) // nolint: gosec
 	if !os.IsNotExist(err) {
 		if !options.AllowExistingDestination {
 			return &AlreadyExistsError{dst}
 		}
-
-		fstat, err := dfile.Stat()
+		var fstat os.FileInfo
+		fstat, err = dfile.Stat()
 		if err != nil {
 			return err
 		}
@@ -296,13 +304,17 @@ func CopyTree(src, dst string, options *CopyTreeOptions) error {
 		}
 
 		// Deal with symlinks
-		if IsSymlink(entryFileInfo) {
-			linkTo, err := os.Readlink(srcPath)
+		if IsSymlink(entryFileInfo) { // nolint: gocritic
+			var linkTo string
+			linkTo, err = os.Readlink(srcPath)
 			if err != nil {
 				return err
 			}
 			if options.Symlinks {
-				os.Symlink(linkTo, dstPath)
+				err = os.Symlink(linkTo, dstPath)
+				if err != nil {
+					return err
+				}
 				//CopyStat(srcPath, dstPath, false)
 			} else {
 				// ignore dangling symlink if flag is on
